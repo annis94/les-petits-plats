@@ -36,7 +36,7 @@ function displayRecipes(recipes) {
     }
 
     recipes.forEach(recipe => {
-        const imageUrl = `images/JSON recipes/Recette${recipe.id.toString().padStart(2, '0')}.jpg`;
+        const imageUrl = `img/Recette${recipe.id.toString().padStart(2, '0')}.jpg`;
         const recipeCard = `
            <div class="bg-white rounded-lg shadow-md overflow-hidden flex flex-col w-full max-w-sm">
                <div class="relative">
@@ -123,6 +123,7 @@ ingredientFilter.addEventListener('change', () => {
     if (selectedIngredient && !selectedIngredients.includes(selectedIngredient)) {
         selectedIngredients.push(selectedIngredient);
         addTag('ingredient', selectedIngredient);
+        ingredientFilter.value = ""; // Réinitialiser la sélection
         updateSearchResults();
     }
 });
@@ -132,6 +133,7 @@ appareilFilter.addEventListener('change', () => {
     if (selectedAppareil && !selectedAppliances.includes(selectedAppareil)) {
         selectedAppliances.push(selectedAppareil);
         addTag('appareil', selectedAppareil);
+        appareilFilter.value = ""; // Réinitialiser la sélection
         updateSearchResults();
     }
 });
@@ -141,9 +143,11 @@ ustensileFilter.addEventListener('change', () => {
     if (selectedUstensile && !selectedUstensils.includes(selectedUstensile)) {
         selectedUstensils.push(selectedUstensile);
         addTag('ustensile', selectedUstensile);
+        ustensileFilter.value = ""; // Réinitialiser la sélection
         updateSearchResults();
     }
 });
+
 
 // Fonction pour ajouter un tag visuel lorsqu'un filtre est sélectionné
 function addTag(tagType, tagValue) {
@@ -205,9 +209,9 @@ function populateFilters(filters) {
 // Mise à jour dynamique des options de filtres
 function updateAvailableFilters(recipes) {
     const filters = extractFilters(recipes);
-    ingredientFilter.innerHTML = '';
-    appareilFilter.innerHTML = '';
-    ustensileFilter.innerHTML = '';
+    ingredientFilter.innerHTML = '<option value="">Ingrédients</option>'; 
+    appareilFilter.innerHTML = '<option value="">Appareils</option>';
+    ustensileFilter.innerHTML = '<option value="">Ustensiles</option>';
     populateFilters(filters);
 }
 
