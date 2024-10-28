@@ -39,29 +39,35 @@
 
     
     <!-- Section des filtres -->
-    <section class="container mx-auto py-8">
-        <div class="flex justify-between items-center mb-4">
-            <div class="flex space-x-4">
-                <select id="ingredient-filter" class="p-2 bg-white rounded shadow border-gray-300">
-                    <option value="">Ingrédients</option>
-                    <!-- Options dynamiques générées par JavaScript -->
-                </select>
-                <select id="appareil-filter" class="p-2 bg-white rounded shadow border-gray-300">
-                    <option value="">Appareils</option>
-                    <!-- Options dynamiques générées par JavaScript -->
-                </select>
-                <select id="ustensile-filter" class="p-2 bg-white rounded shadow border-gray-300">
-                    <option value="">Ustensiles</option>
-                    <!-- Options dynamiques générées par JavaScript -->
-                </select>
-            </div>
-            <div id="recipe-count" class="text-gray-700 font-semibold">1500 recettes</div>
+<section class="container mx-auto py-8">
+    <div class="flex justify-between items-center mb-4">
+        <div class="flex space-x-4">
+            <select id="ingredient-filter" class="p-2 bg-white rounded shadow border-gray-300">
+                <option value="">Ingrédients</option>
+                <!-- Options dynamiques générées par JavaScript -->
+            </select>
+            <select id="appareil-filter" class="p-2 bg-white rounded shadow border-gray-300">
+                <option value="">Appareils</option>
+                <!-- Options dynamiques générées par JavaScript -->
+            </select>
+            <select id="ustensile-filter" class="p-2 bg-white rounded shadow border-gray-300">
+                <option value="">Ustensiles</option>
+                <!-- Options dynamiques générées par JavaScript -->
+            </select>
         </div>
+        <div id="recipe-count" class="text-gray-700 font-semibold">1500 recettes</div>
+    </div>
 
-        <div id="recipe-cards-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6">
-            <!-- Les cartes de recettes dynamiques générées par JavaScript seront ajoutées ici -->
-        </div>
-    </section>
+    <!-- Conteneur pour les tags sélectionnés -->
+    <div id="selected-tags" class="flex flex-wrap gap-2 mb-4">
+        <!-- Les tags sélectionnés seront ajoutés ici par JavaScript -->
+    </div>
+
+    <div id="recipe-cards-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6">
+        <!-- Les cartes de recettes dynamiques générées par JavaScript seront ajoutées ici -->
+    </div>
+</section>
+
 
 </body>
 <script src="recipes.json"></script>
