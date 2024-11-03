@@ -110,7 +110,6 @@ function filterRecipesByText(recipes, query) {
     });
 }
 
-// Ajoute un écouteur d'événements pour surveiller les saisies dans la barre de recherche
 // Variable pour gérer le délai de debounce
 let debounceTimeout;
 
