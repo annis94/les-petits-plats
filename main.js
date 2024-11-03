@@ -1,6 +1,12 @@
 // Variable globale pour stocker les données des recettes
 let recipesData = [];
 
+
+const ingredientFilter = document.getElementById('id-du-filtre-ingredient');
+const appareilFilter = document.getElementById('id-du-filtre-appareil');
+const ustensileFilter = document.getElementById('id-du-filtre-ustensile');
+
+
 // Chargement des données à partir d'un fichier JSON externe contenant les recettes
 fetch('recipes.json')
     .then(response => response.json())
