@@ -66,20 +66,31 @@ ustensileFilter.addEventListener('change', function() {
 
 // Fonction pour afficher les tags sélectionnés
 function displaySelectedTags() {
-    selectedTagsContainer.innerHTML = '';
+    selectedTagsContainer.innerHTML = ''; // Vide le conteneur pour actualiser les tags
     for (let category in selectedTags) {
-        for (let i = 0; i < selectedTags[category].length; i++) {
-            const tag = selectedTags[category][i];
+        selectedTags[category].forEach(tag => {
             const tagElement = document.createElement('span');
-            tagElement.className = 'bg-blue-100 text-blue-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded';
+            tagElement.className = 'bg-yellow-400 text-black text-xs font-semibold mr-2 px-2.5 py-0.5 rounded cursor-pointer';
             tagElement.textContent = tag;
-            tagElement.addEventListener('click', function() {
+            
+            // Ajoute un élément pour supprimer le tag
+            const removeButton = document.createElement('span');
+            removeButton.textContent = ' ×';
+            removeButton.className = 'ml-1 text-black font-bold cursor-pointer';
+            
+            // Écouteur pour supprimer le tag au clic
+            removeButton.addEventListener('click', function() {
                 removeTag(category, tag);
             });
+
+            // Ajoute le bouton de suppression au tag
+            tagElement.appendChild(removeButton);
             selectedTagsContainer.appendChild(tagElement);
-        }
+        });
     }
 }
+
+
 
 // Fonction pour supprimer un tag sélectionné
 function removeTag(category, tag) {
@@ -102,7 +113,7 @@ function displayRecipes(recipes) {
 
     for (let i = 0; i < recipes.length; i++) {
         const recipe = recipes[i];
-        const imageUrl = 'img-recettes/Recette' + recipe.id.toString().padStart(2, '0') + '.jpg';
+        const imageUrl = `img/Recette${recipe.id.toString().padStart(2, '0')}.jpg`;
         let ingredientsList = '';
         
         for (let j = 0; j < recipe.ingredients.length; j++) {
@@ -206,6 +217,18 @@ function filterRecipesByTags(recipes, selectedIngredients, selectedAppliances, s
     }
     return filteredRecipes;
 }
+
+function addTag(tagType, tagValue) {
+    const tag = document.createElement('div');
+    tag.classList.add('tag', 'bg-blue-100', 'text-blue-800', 'text-xs', 'font-semibold', 'mr-2', 'px-2.5', 'py-0.5', 'rounded');
+    tag.innerHTML = `${tagValue} <span class="remove-tag cursor-pointer">&times;</span>`;
+    tag.querySelector('.remove-tag').addEventListener('click', () => {
+        tag.remove();
+        clearFilter(tagType, tagValue);
+    });
+    selectedTagsContainer.appendChild(tag);
+}
+
 
 // Extraction des filtres
 function extractFilters(recipes) {
