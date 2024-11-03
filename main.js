@@ -23,38 +23,45 @@ const recipeContainer = document.getElementById('recipe-cards-container');
 
 // Fonction pour afficher les recettes sur la page
 function displayRecipes(recipes) {
-    recipeContainer.innerHTML = ''; // On vide le conteneur pour éviter des doublons lors de l'affichage
+    recipeContainer.innerHTML = ''; 
     const recipeCountElement = document.getElementById('recipe-count');
     
-    // Mise à jour du compteur de recettes
     recipeCountElement.textContent = `${recipes.length} recette${recipes.length > 1 ? 's' : ''}`;
 
     if (recipes.length === 0) {
-        // Affiche un message si aucune recette ne correspond
-        recipeContainer.innerHTML = `<p class="text-center text-gray-600">Aucune recette ne contient "${searchBar.value}". Essayez un autre mot-clé comme "poulet" ou "chocolat".</p>`;
+        recipeContainer.innerHTML = `<p class="text-center text-gray-600">Aucune recette ne contient "${searchBar.value}".</p>`;
         return;
     }
 
+    let recipesHTML = '';
     recipes.forEach(recipe => {
         const imageUrl = `img/Recette${recipe.id.toString().padStart(2, '0')}.jpg`;
-        const recipeCard = `
-           <div class="bg-white rounded-lg shadow-md overflow-hidden flex flex-col w-full max-w-sm">
-               <div class="relative">
-                   <img src="${imageUrl}" alt="${recipe.name}" class="w-full h-60 object-cover rounded-t-lg" />
-                   <span class="absolute top-2 right-2 bg-yellow-400 text-black text-xs font-bold px-2 py-1 rounded-full">${recipe.time} min</span>
-               </div>
-               <div class="p-5 flex flex-col flex-1">
-                   <h3 class="text-lg font-bold mb-2">${recipe.name}</h3>
-                   <p class="text-sm text-gray-600 mb-4"><strong>RECETTE</strong><br>${recipe.description}</p>
-                   <p class="text-sm font-semibold mb-2"><strong>INGRÉDIENTS</strong></p>
-                   <ul class="text-sm grid grid-cols-2 gap-x-4 gap-y-1">
-                       ${recipe.ingredients.map(ing => `<li>${ing.ingredient}</li>`).join('')}
-                   </ul>
-               </div>
-           </div>`;
-        recipeContainer.innerHTML += recipeCard;
+        recipesHTML += `
+            <div class="recipe-card bg-white rounded-lg shadow-md overflow-hidden flex flex-col w-full max-w-sm" data-id="${recipe.id}">
+                <div class="relative">
+                    <img src="${imageUrl}" alt="${recipe.name}" class="w-full h-60 object-cover rounded-t-lg" />
+                    <span class="absolute top-2 right-2 bg-yellow-400 text-black text-xs font-bold px-2 py-1 rounded-full">${recipe.time} min</span>
+                </div>
+                <div class="p-5 flex flex-col flex-1">
+                    <h3 class="text-lg font-bold mb-2">${recipe.name}</h3>
+                    <p class="text-sm text-gray-600 mb-4"><strong>RECETTE</strong><br>${recipe.description}</p>
+                    <p class="text-sm font-semibold mb-2"><strong>INGRÉDIENTS</strong></p>
+                    <ul class="text-sm grid grid-cols-2 gap-x-4 gap-y-1">
+                        ${recipe.ingredients.map(ing => `<li>${ing.ingredient}</li>`).join('')}
+                    </ul>
+                </div>
+            </div>`;
+    });
+    recipeContainer.innerHTML = recipesHTML;
+    
+    document.querySelectorAll('.recipe-card').forEach(card => {
+        card.addEventListener('click', () => {
+            const recipeId = card.getAttribute('data-id');
+            // Action pour afficher les détails de la recette
+        });
     });
 }
+
 
 // Fonction de recherche avancée combinant plusieurs filtres
 function filterRecipesByTags(recipes, selectedIngredients, selectedAppliances, selectedUstensils) {
@@ -104,17 +111,24 @@ function filterRecipesByText(recipes, query) {
 }
 
 // Ajoute un écouteur d'événements pour surveiller les saisies dans la barre de recherche
-searchBar.addEventListener('input', (event) => {
-    const query = event.target.value;
-    if (query.length >= 3) {
-        const searchResults = filterRecipesByText(recipesData, query);
-        displayRecipes(searchResults);
-        updateAvailableFilters(searchResults);
-    } else {
-        // Affiche toutes les recettes si la recherche est vide ou contient moins de 3 caractères
-        displayRecipes(recipesData);
-        updateAvailableFilters(recipesData);
-    }
+// Variable pour gérer le délai de debounce
+let debounceTimeout;
+
+// Ajoute un écouteur d'événements pour surveiller les saisies dans la barre de recherche avec un délai
+searchBar.addEventListener('input', () => {
+    clearTimeout(debounceTimeout);
+    debounceTimeout = setTimeout(() => {
+        const query = searchBar.value;
+        if (query.length >= 3) {
+            const searchResults = filterRecipesByText(recipesData, query);
+            displayRecipes(searchResults);
+            updateAvailableFilters(searchResults);
+        } else {
+            // Affiche toutes les recettes si la recherche est vide ou contient moins de 3 caractères
+            displayRecipes(recipesData);
+            updateAvailableFilters(recipesData);
+        }
+    }, 300);
 });
 
 // Écouteurs d'événements pour les filtres et la recherche avancée
@@ -175,10 +189,22 @@ function clearFilter(tagType, tagValue) {
 
 // Fonction pour mettre à jour les résultats de recherche en fonction des tags sélectionnés
 function updateSearchResults() {
-    const searchResults = filterRecipesByTags(recipesData, selectedIngredients, selectedAppliances, selectedUstensils);
-    displayRecipes(searchResults);
-    updateAvailableFilters(searchResults);
+    let filteredRecipes = recipesData;
+    
+    // Application des tags en premier pour réduire le jeu de résultats
+    if (selectedIngredients.length > 0 || selectedAppliances.length > 0 || selectedUstensils.length > 0) {
+        filteredRecipes = filterRecipesByTags(filteredRecipes, selectedIngredients, selectedAppliances, selectedUstensils);
+    }
+    
+    // Application de la recherche textuelle si elle est valide
+    if (searchBar.value.length >= 3) {
+        filteredRecipes = filterRecipesByText(filteredRecipes, searchBar.value);
+    }
+    
+    displayRecipes(filteredRecipes);
+    updateAvailableFilters(filteredRecipes);
 }
+
 
 // Fonction pour extraire les filtres des recettes
 function extractFilters(recipes) {
@@ -209,6 +235,12 @@ function populateFilters(filters) {
 // Mise à jour dynamique des options de filtres
 function updateAvailableFilters(recipes) {
     const filters = extractFilters(recipes);
+
+    // Exclure les tags sélectionnés des options de filtre
+    filters.ingredients = [...filters.ingredients].filter(ing => !selectedIngredients.includes(ing));
+    filters.appareils = [...filters.appareils].filter(app => !selectedAppliances.includes(app));
+    filters.ustensiles = [...filters.ustensiles].filter(ust => !selectedUstensils.includes(ust));
+
     ingredientFilter.innerHTML = '<option value="">Ingrédients</option>'; 
     appareilFilter.innerHTML = '<option value="">Appareils</option>';
     ustensileFilter.innerHTML = '<option value="">Ustensiles</option>';
