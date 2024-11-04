@@ -1,4 +1,3 @@
-// Attendre que le DOM soit complètement chargé
 document.addEventListener('DOMContentLoaded', () => {
     // Variables globales
     let recipesData = [];
@@ -9,14 +8,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const selectedTagsContainer = document.getElementById('selected-tags');
     const recipeContainer = document.getElementById('recipe-cards-container');
 
-    // Initialisons d'abord les dropdowns
+    // Initialisation des dropdowns personnalisés
     initializeCustomDropdowns();
 
-    // Puis chargeons les données
+    // Chargement des données
     fetch('recipes.json')
         .then(response => response.json())
         .then(data => {
-            console.log("Données reçues :", data);
             recipesData = data;
             const filters = extractFilters(recipesData);
             displayRecipes(recipesData);
@@ -80,10 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         filters.forEach(filter => {
             const select = document.getElementById(filter.id);
-            if (!select) {
-                console.error(`L'élément ${filter.id} n'a pas été trouvé`);
-                return;
-            }
+            if (!select) return;
 
             const parent = select.parentElement;
             if (!parent) return;
@@ -99,10 +94,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="dropdown-content hidden absolute mt-2 w-64 bg-white rounded-lg shadow-lg z-50">
                     <div class="p-2 border-b">
                         <div class="relative">
-                            <input type="text" 
-                                placeholder="Rechercher un ${filter.label.toLowerCase()}"
-                                class="w-full p-2 pr-8 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-yellow-400">
-                            <button class="clear-search hidden absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700">
+                            <input 
+                                type="text" 
+                                class="w-full p-2 pr-10 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                            />
+                            <i class="fa-solid fa-magnifying-glass absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                            <button class="clear-search hidden absolute right-8 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700">
                                 &times;
                             </button>
                         </div>
@@ -127,19 +124,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!button || !content || !searchInput || !clearButton || !optionsContainer || !arrow) return;
 
+        // Afficher/masquer le dropdown au clic sur le bouton
         button.addEventListener('click', (e) => {
-            e.stopPropagation();
-            document.querySelectorAll('.dropdown-content').forEach(el => {
-                if (el !== content) {
-                    el.classList.add('hidden');
-                    const otherArrow = el.parentElement?.querySelector('span:last-child');
-                    if (otherArrow) otherArrow.style.transform = '';
-                }
-            });
-            content.classList.toggle('hidden');
-            arrow.style.transform = content.classList.contains('hidden') ? '' : 'rotate(180deg)';
+            e.stopPropagation();  // Empêche la propagation pour éviter que l'événement ne cache le dropdown
+            toggleDropdown(content, arrow);
         });
 
+        // Afficher le dropdown quand le champ de recherche reçoit le focus
+        searchInput.addEventListener('focus', () => {
+            content.classList.remove('hidden');
+            arrow.style.transform = 'rotate(180deg)';
+        });
+
+        // Cacher le dropdown quand le champ de recherche perd le focus (avec délai pour permettre les clics à l'intérieur)
+        searchInput.addEventListener('blur', () => {
+            setTimeout(() => {
+                content.classList.add('hidden');
+                arrow.style.transform = '';
+            }, 200);
+        });
+
+        // Filtrage des options en tapant dans le champ de recherche
         searchInput.addEventListener('input', (e) => {
             const searchTerm = e.target.value.toLowerCase();
             clearButton.classList.toggle('hidden', !searchTerm);
@@ -150,6 +155,18 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
+        // Empêche le dropdown de se fermer si on clique à l'intérieur
+        content.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+
+        // Cacher le dropdown si on clique en dehors
+        document.addEventListener('click', () => {
+            content.classList.add('hidden');
+            arrow.style.transform = '';
+        });
+
+        // Effacer le champ de recherche et réinitialiser les options
         clearButton.addEventListener('click', (e) => {
             e.stopPropagation();
             searchInput.value = '';
@@ -161,6 +178,69 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Fonction pour afficher/masquer le dropdown
+    function toggleDropdown(content, arrow) {
+        document.querySelectorAll('.dropdown-content').forEach(el => {
+            if (el !== content) {
+                el.classList.add('hidden');
+                const otherArrow = el.parentElement?.querySelector('span:last-child');
+                if (otherArrow) otherArrow.style.transform = '';
+            }
+        });
+        content.classList.toggle('hidden');
+        arrow.style.transform = content.classList.contains('hidden') ? '' : 'rotate(180deg)';
+    }
+
+    // Fonction pour extraire les filtres des recettes
+    function extractFilters(recipes) {
+        const ingredients = new Set();
+        const appliances = new Set();
+        const ustensils = new Set();
+
+        recipes.forEach(recipe => {
+            recipe.ingredients.forEach(ing => ingredients.add(ing.ingredient.toLowerCase()));
+            if (recipe.appliance) appliances.add(recipe.appliance.toLowerCase());
+            recipe.ustensils.forEach(ust => ustensils.add(ust.toLowerCase()));
+        });
+
+        return {
+            ingredients: Array.from(ingredients).sort(),
+            appliances: Array.from(appliances).sort(),
+            ustensils: Array.from(ustensils).sort()
+        };
+    }
+
+    // Fonction pour remplir les options de filtres
+    function populateFilters(filters) {
+        const containers = {
+            ingredients: document.querySelector('#ingredient-filter-container .options-container'),
+            appliances: document.querySelector('#appareil-filter-container .options-container'),
+            ustensils: document.querySelector('#ustensile-filter-container .options-container')
+        };
+
+        if (filters.ingredients) {
+            filters.ingredients.forEach(ingredient => {
+                const option = createFilterOption(ingredient, 'ingredient', selectedIngredients);
+                if (option) containers.ingredients.appendChild(option);
+            });
+        }
+
+        if (filters.appliances) {
+            filters.appliances.forEach(appliance => {
+                const option = createFilterOption(appliance, 'appliance', selectedAppliances);
+                if (option) containers.appliances.appendChild(option);
+            });
+        }
+
+        if (filters.ustensils) {
+            filters.ustensils.forEach(ustensil => {
+                const option = createFilterOption(ustensil, 'ustensil', selectedUstensils);
+                if (option) containers.ustensils.appendChild(option);
+            });
+        }
+    }
+
+    // Fonction pour créer une option de filtre
     function createFilterOption(value, type, selectedArray) {
         if (!value) return null;
 
@@ -178,49 +258,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return option;
     }
 
-    function populateFilters(filters) {
-        if (!filters) return;
-
-        const containers = {
-            ingredients: document.querySelector('#ingredient-filter-container .options-container'),
-            appareils: document.querySelector('#appareil-filter-container .options-container'),
-            ustensiles: document.querySelector('#ustensile-filter-container .options-container')
-        };
-
-        // Vérifier que tous les conteneurs existent
-        if (!containers.ingredients || !containers.appareils || !containers.ustensiles) {
-            console.error('Un ou plusieurs conteneurs de filtres non trouvés');
-            return;
-        }
-
-        // Vider les conteneurs
-        Object.values(containers).forEach(container => {
-            container.innerHTML = '';
-        });
-
-        // Ajouter les options
-        if (filters.ingredients) {
-            filters.ingredients.forEach(ing => {
-                const option = createFilterOption(ing, 'ingredient', selectedIngredients);
-                if (option) containers.ingredients.appendChild(option);
-            });
-        }
-
-        if (filters.appareils) {
-            filters.appareils.forEach(app => {
-                const option = createFilterOption(app, 'appareil', selectedAppliances);
-                if (option) containers.appareils.appendChild(option);
-            });
-        }
-
-        if (filters.ustensiles) {
-            filters.ustensiles.forEach(ust => {
-                const option = createFilterOption(ust, 'ustensile', selectedUstensils);
-                if (option) containers.ustensiles.appendChild(option);
-            });
-        }
-    }
-
+    // Fonction pour ajouter un tag sélectionné
     function addTag(tagType, tagValue) {
         if (!selectedTagsContainer || !tagValue) return;
 
@@ -236,14 +274,13 @@ document.addEventListener('DOMContentLoaded', () => {
         selectedTagsContainer.appendChild(tag);
     }
 
+    // Fonction pour effacer un filtre
     function clearFilter(tagType, tagValue) {
-        if (!tagType || !tagValue) return;
-
         let array;
         switch(tagType) {
             case 'ingredient': array = selectedIngredients; break;
-            case 'appareil': array = selectedAppliances; break;
-            case 'ustensile': array = selectedUstensils; break;
+            case 'appliance': array = selectedAppliances; break;
+            case 'ustensil': array = selectedUstensils; break;
             default: return;
         }
 
@@ -254,61 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateSearchResults();
     }
 
-    function filterRecipesByTags(recipes) {
-        if (!recipes) return [];
-
-        return recipes.filter(recipe => {
-            const hasAllIngredients = selectedIngredients.every(tag =>
-                recipe.ingredients.some(ing => normalizeText(ing.ingredient).includes(normalizeText(tag)))
-            );
-            
-            const hasSelectedAppliance = selectedAppliances.length === 0 || 
-                selectedAppliances.includes(normalizeText(recipe.appliance));
-            
-            const hasAllUstensils = selectedUstensils.every(tag =>
-                recipe.ustensils.some(ust => normalizeText(ust).includes(normalizeText(tag)))
-            );
-            
-            return hasAllIngredients && hasSelectedAppliance && hasAllUstensils;
-        });
-    }
-
-    function filterRecipesByText(recipes, query) {
-        if (!recipes || !query) return recipes;
-
-        const normalizedQuery = normalizeText(query);
-        return recipes.filter(recipe => {
-            return normalizeText(recipe.name).includes(normalizedQuery) ||
-                recipe.ingredients.some(ing => normalizeText(ing.ingredient).includes(normalizedQuery)) ||
-                normalizeText(recipe.description).includes(normalizedQuery);
-        });
-    }
-
-    function normalizeText(text) {
-        if (!text) return '';
-        return text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "");
-    }
-
-    function extractFilters(recipes) {
-        if (!recipes || !Array.isArray(recipes)) return { ingredients: [], appareils: [], ustensiles: [] };
-
-        const ingredients = new Set();
-        const appareils = new Set();
-        const ustensiles = new Set();
-        
-        recipes.forEach(recipe => {
-            recipe.ingredients?.forEach(ing => ingredients.add(ing.ingredient.toLowerCase()));
-            if (recipe.appliance) appareils.add(recipe.appliance.toLowerCase());
-            recipe.ustensils?.forEach(ust => ustensiles.add(ust.toLowerCase()));
-        });
-        
-        return {
-            ingredients: [...ingredients].sort(),
-            appareils: [...appareils].sort(),
-            ustensiles: [...ustensiles].sort()
-        };
-    }
-
+    // Fonction pour mettre à jour les résultats de la recherche
     function updateSearchResults() {
         let filteredRecipes = recipesData;
         
@@ -324,16 +307,46 @@ document.addEventListener('DOMContentLoaded', () => {
         updateAvailableFilters(filteredRecipes);
     }
 
+    // Fonction pour filtrer les recettes par tags
+    function filterRecipesByTags(recipes) {
+        return recipes.filter(recipe => {
+            const hasAllIngredients = selectedIngredients.every(tag =>
+                recipe.ingredients.some(ing => ing.ingredient.toLowerCase().includes(tag.toLowerCase()))
+            );
+            
+            const hasSelectedAppliance = selectedAppliances.length === 0 || 
+                selectedAppliances.includes(recipe.appliance.toLowerCase());
+            
+            const hasAllUstensils = selectedUstensils.every(tag =>
+                recipe.ustensils.some(ust => ust.toLowerCase().includes(tag.toLowerCase()))
+            );
+            
+            return hasAllIngredients && hasSelectedAppliance && hasAllUstensils;
+        });
+    }
+
+    // Fonction pour filtrer les recettes par texte
+    function filterRecipesByText(recipes, query) {
+        const normalizedQuery = query.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "");
+        return recipes.filter(recipe => 
+            recipe.name.toLowerCase().includes(normalizedQuery) ||
+            recipe.ingredients.some(ing => ing.ingredient.toLowerCase().includes(normalizedQuery)) ||
+            recipe.description.toLowerCase().includes(normalizedQuery)
+        );
+    }
+
+    // Fonction pour mettre à jour les filtres disponibles
     function updateAvailableFilters(recipes) {
-        if (!recipes) return;
         const filters = extractFilters(recipes);
-        
+
         filters.ingredients = filters.ingredients.filter(ing => !selectedIngredients.includes(ing));
-        filters.appareils = filters.appareils.filter(app => !selectedAppliances.includes(app));
-        filters.ustensiles = filters.ustensiles.filter(ust => !selectedUstensils.includes(ust));
-        
+        filters.appliances = filters.appliances.filter(app => !selectedAppliances.includes(app));
+        filters.ustensils = filters.ustensils.filter(ust => !selectedUstensils.includes(ust));
+
         populateFilters(filters);
     }
+
+
 
     // Écouteur d'événements pour la barre de recherche principale
     if (searchBar) {
